@@ -55,8 +55,8 @@ class PlayerRenderer {
   static void draw(Canvas canvas, PlayerRenderData data, HopRenderContext ctx, HopRow Function(int) getRow) {
     if (data.phase == HopPhase.dead && data.splash > 0) {
       final p = ctx.tilePos(data.px + 0.5, data.pz + 0.22);
-      ctx.glow(canvas, p, 16 + (1 - data.splash) * 10, Color.fromRGBO(180, 240, 255, data.splash * 0.45));
-      canvas.drawCircle(p, 12 + (1 - data.splash) * 18, Paint()..color = Color.fromRGBO(255, 255, 255, data.splash * 0.5));
+      ctx.glow(canvas, p, 16 + (1 - data.splash) * 10, Color.fromRGBO(180, 240, 250, data.splash * 0.4));
+      canvas.drawCircle(p, 12 + (1 - data.splash) * 18, Paint()..color = Color.fromRGBO(220, 250, 255, data.splash * 0.4));
       return;
     }
 
@@ -68,8 +68,11 @@ class PlayerRenderer {
     final hop = data.flattened || walking ? 0.0 : data.hopLift;
     final riding = data.ridingCurrent && !data.flattened;
     final rideRow = riding ? getRow(data.pz) : null;
-    final bob = riding ? RiverRenderer.floaterBob(data.rideLog?.x ?? x, data.pz, ctx.time) : 0.0;
-    final driftLean = rideRow == null ? 0.0 : rideRow.dir * 2.2;
+    final leaf = rideRow?.pads ?? false;
+    final rideX = data.rideLog?.x ?? x;
+    final bob = riding ? RiverRenderer.floaterBob(rideX, data.pz, ctx.time, leaf: leaf) : 0.0;
+    final roll = riding ? RiverRenderer.floaterRoll(rideX, data.pz, ctx.time, leaf: leaf) : 0.0;
+    final driftLean = rideRow == null ? 0.0 : rideRow.dir * 2.6 + roll * 28;
     final p = ctx.tilePos(x + 0.5, z + 0.22) + Offset(driftLean, bob);
     final c = Offset(p.dx, p.dy - hop);
     if (rideRow != null) {

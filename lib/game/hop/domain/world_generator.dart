@@ -90,7 +90,8 @@ class WorldGenerator {
     final dir = _rng.nextBool() ? 1 : -1;
     final speed = switch (stripKind) {
       RowKind.road => math.min(2.15, 0.72 + index * 0.012 + _rng.nextDouble() * 0.32),
-      RowKind.water => math.min(1.42, 0.62 + index * 0.01 + _rng.nextDouble() * 0.24),
+      // Gentler current — serene Naiad-like drift rather than arcade rush.
+      RowKind.water => math.min(1.12, 0.48 + index * 0.008 + _rng.nextDouble() * 0.22),
       RowKind.rail => 3.2 + index * 0.016 + _rng.nextDouble() * 0.7,
       RowKind.grass => 0.0,
     };
@@ -145,13 +146,17 @@ class WorldGenerator {
         );
       }
     } else if (stripKind == RowKind.water) {
-      final n = pads ? 5 : 4 + _rng.nextInt(2);
+      // Slightly irregular spacing/widths so floaters feel hand-placed, not grid-snapped.
+      final n = pads ? 5 : 3 + _rng.nextInt(2);
       for (var i = 0; i < n; i++) {
+        final jitter = (_rng.nextDouble() - 0.5) * 0.55;
         row.movers.add(
           Mover(
-            i * (lanes / n) + _rng.nextDouble() * 0.35,
-            pads ? 0.92 + _rng.nextDouble() * 0.18 : 1.32 + _rng.nextDouble() * 0.32,
-            pads ? const Color(0xFF3FAE4A) : const Color(0xFF8B5A2B),
+            i * (lanes / n) + _rng.nextDouble() * 0.45 + jitter,
+            pads
+                ? 0.95 + _rng.nextDouble() * 0.2
+                : 1.55 + _rng.nextDouble() * 0.65,
+            pads ? const Color(0xFF2F8A48) : const Color(0xFFA85A3A),
           ),
         );
       }

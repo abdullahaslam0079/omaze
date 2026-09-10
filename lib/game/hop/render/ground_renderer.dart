@@ -25,6 +25,7 @@ class GroundRenderer {
     switch (row.kind) {
       case RowKind.grass:
         _drawMeadow(canvas, row, rect, origin, ctx);
+        _drawShoreBlend(canvas, row, rect, origin, ctx);
       case RowKind.road:
         _drawRoad(canvas, row, rect, origin, ctx);
       case RowKind.water:
@@ -33,6 +34,54 @@ class GroundRenderer {
         RailRenderer.draw(canvas, row, rect, origin, ctx);
     }
     _drawDistanceTint(canvas, rect, origin, ctx);
+  }
+
+  /// Soft dithered lip where meadow meets water — Naiad-like torn-paper shore.
+  static void _drawShoreBlend(
+    Canvas canvas,
+    HopRow row,
+    Rect rect,
+    Offset origin,
+    HopRenderContext ctx,
+  ) {
+    final ahead = ctx.rows[row.index + 1];
+    final behind = ctx.rows[row.index - 1];
+    final top = origin.dy - ctx.tile;
+    if (ahead?.kind == RowKind.water) {
+      canvas.drawRect(
+        Rect.fromLTWH(0, top, ctx.size.width, ctx.tile * 0.2),
+        Paint()
+          ..shader = ui.Gradient.linear(
+            Offset(0, top),
+            Offset(0, top + ctx.tile * 0.2),
+            const [Color(0x882AA8B8), Color(0x442AA8B8), Color(0x00000000)],
+            const [0.0, 0.4, 1.0],
+          ),
+      );
+      for (var i = 0; i < 8; i++) {
+        final x = ((row.index * 37 + i * 53) % 97) / 97 * ctx.size.width;
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: Offset(x, top + ctx.tile * 0.05),
+            width: 16 + (i % 4) * 5,
+            height: 5,
+          ),
+          Paint()..color = const Color(0x550E5A6A),
+        );
+      }
+    }
+    if (behind?.kind == RowKind.water) {
+      canvas.drawRect(
+        Rect.fromLTWH(0, origin.dy - ctx.tile * 0.18, ctx.size.width, ctx.tile * 0.18),
+        Paint()
+          ..shader = ui.Gradient.linear(
+            Offset(0, origin.dy - ctx.tile * 0.18),
+            Offset(0, origin.dy),
+            const [Color(0x00000000), Color(0x442AA8B8), Color(0x772AA8B8)],
+            const [0.0, 0.45, 1.0],
+          ),
+      );
+    }
   }
 
   /// Light atmospheric perspective only on the farthest visible strip.
@@ -167,6 +216,16 @@ class GroundRenderer {
     for (final lane in row.rocks) {
       RockRenderer.draw(canvas, lane, row.index, ctx);
     }
+    // Trees are drawn in [drawRowDecor] after every row's ground fill,
+    // so canopies can overlap the strip above without being sliced off.
+  }
+
+  /// Tall meadow props drawn after all row fills (trees overflow row bounds).
+  static void drawRowDecor(Canvas canvas, HopRow row, HopRenderContext ctx) {
+    if (row.kind != RowKind.grass) return;
+    final origin = ctx.tilePos(0, row.index.toDouble());
+    if (origin.dy < ctx.horizon - 4) return;
+
     for (final tree in row.trees) {
       TreeRenderer.draw(canvas, tree, row.index, ctx);
     }

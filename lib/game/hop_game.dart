@@ -341,6 +341,10 @@ class HopGame extends FlameGame {
     if (!_ridingCurrent) {
       final targetX = (_liveX + 0.5).clamp(_minCamX, _maxCamX);
       camX += (targetX - camX) * math.min(1, dt * 5.6);
+    } else {
+      // Soft follow while riding — calm river drift instead of locked framing.
+      final targetX = (_liveX + 0.5).clamp(_minCamX, _maxCamX);
+      camX += (targetX - camX) * math.min(1, dt * 2.1);
     }
 
     // Movers
@@ -412,6 +416,10 @@ class HopGame extends FlameGame {
     final keys = worldGen.rows.keys.toList()..sort();
     for (final z in keys) {
       GroundRenderer.drawRow(canvas, worldGen.rows[z]!, ctx);
+    }
+    // Trees after all ground fills so canopies aren't clipped by the next row.
+    for (final z in keys) {
+      GroundRenderer.drawRowDecor(canvas, worldGen.rows[z]!, ctx);
     }
     CoinRenderer.drawAll(canvas, worldGen.coins, ctx);
     FxRenderer.drawAll(canvas, fx, ctx);
@@ -521,7 +529,7 @@ class HopGame extends FlameGame {
     if (sx < tile * 0.72 || sx > size.x - tile * 0.72) {
       _nearCool = 0.55;
       chick.playStartle();
-      _burst(_liveX + 0.5, pz + 0.2, const Color(0x88A8F0FF), 4);
+      _burst(_liveX + 0.5, pz + 0.2, const Color(0x88B8F0F8), 4);
     }
   }
 
@@ -603,15 +611,15 @@ class HopGame extends FlameGame {
   void _landDust() {
     final row = _row(pz);
     if (row.kind == RowKind.water) {
-      _burst(px + 0.5, pz + 0.2, const Color(0x88A8F0FF), 8);
-      for (var i = 0; i < 5; i++) {
+      _burst(px + 0.5, pz + 0.2, const Color(0x88B8F0F8), 6);
+      for (var i = 0; i < 6; i++) {
         fx.add(FxParticle(
           px + 0.5, pz + 0.18,
-          row.dir * (0.6 + _rng.nextDouble() * 1.4),
-          (_rng.nextDouble() - 0.35) * 1.1,
-          0.32 + _rng.nextDouble() * 0.16,
-          const Color(0xAAD8F8FF),
-          2.0 + _rng.nextDouble() * 2.2,
+          row.dir * (0.3 + _rng.nextDouble() * 0.9) + (_rng.nextDouble() - 0.5) * 0.35,
+          (_rng.nextDouble() - 0.4) * 0.8,
+          0.36 + _rng.nextDouble() * 0.2,
+          i.isEven ? const Color(0xAAD8F8FF) : const Color(0x882AA8B8),
+          2.4 + _rng.nextDouble() * 2.8,
         ));
       }
       return;
